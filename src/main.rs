@@ -107,3 +107,22 @@ async fn main() {
 
     println!("{:?}", monikai);
 }
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn initialize() -> Result<(), ()>{
+        let character_json_str = std::fs::read_to_string("data/monikai.json")
+            .map_err(|_| ())?;
+
+        let mut monikai: Monikai = serde_json::from_str(&character_json_str)
+            .map_err(|_| ())?;
+        
+        Ok(())
+    }
+}
