@@ -1,4 +1,5 @@
-use std::fs;
+use std::fs::{ OpenOptions, File };
+use std::io::{ Read, Write, Seek };
 use serde::{ Serialize, Deserialize };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,12 +75,13 @@ impl Monikai {
     async fn send_message( &mut self, message: String ) {
         self.current_conversation.push( Message { sender: String::from("mc"), content: message } );
 
+        /*
         let response = self.respond().await;
         self.current_conversation.push( Message { sender: String::from("monikai"), content: response.content } );
 
         if response.end_conversation {
             self.end_conversation();
-        }
+        }*/
     }
     async fn end_conversation( &mut self ) {
         let conversation_as_string: String = self.current_conversation
@@ -93,17 +95,33 @@ impl Monikai {
         self.memories.push(new_memory);
         self.current_conversation = Vec::new();
     }
+    fn save_to_file( &self, file_handle: &mut File ) {
+        let self_as_string: String = serde_json::to_string(&self).unwrap();
+
+        file_handle.set_len(0).unwrap();
+        file_handle.rewind().unwrap();
+        file_handle.write_all(self_as_string.as_bytes()).expect("Failed to write!");
+    }
 }
 
 #[tokio::main]
 async fn main() {
     println!("Initializing Monikai");
 
-    let character_json_str = fs::read_to_string("data/monikai.json")
+    let mut character_file_handle: File = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("data/monikai.json")
+        .expect("Unable to get handle on './data/monikai.json'!");
+
+    let mut character_json_string = String::new();
+    character_file_handle.read_to_string(&mut character_json_string)
         .expect("Unable to read './data/monikai.json'!");
 
-    let mut monikai: Monikai = serde_json::from_str(&character_json_str)
+    let mut monikai: Monikai = serde_json::from_str(&character_json_string)
         .expect("Unable to parse!");
+
+    monikai.send_message(String::from("hiiii :3")).await;
 
     println!("{:?}", monikai);
 }
