@@ -1,6 +1,33 @@
 use std::fs::{ OpenOptions, File };
 use std::io::{ Read, Write, Seek };
+use std::env;
 use serde::{ Serialize, Deserialize };
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CompletionRequest {
+    model: String,
+    messages: Vec<Message>
+}
+#[derive(Debug, Deserialize)]
+struct CompletionResponse {
+    choices: Vec<Choice>
+}
+#[derive(Debug, Deserialize)]
+struct Choice {
+    message: Message
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Message {
+    role: String,
+    content: String
+}
+impl Message {
+    fn to_string( &self ) -> String {
+        format!("{}: {}", self.role, self.content)
+    }
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Memory {
@@ -46,16 +73,6 @@ impl Memory {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Message {
-    sender: String,
-    content: String
-}
-impl Message {
-    fn to_string( &self ) -> String {
-        format!("{}: {}", self.sender, self.content)
-    }
-}
 
 #[derive(Debug)]
 struct Response {
@@ -65,23 +82,51 @@ struct Response {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Monikai {
+    description: String,
     memories: Vec<Memory>,
     current_conversation: Vec<Message>
 }
 impl Monikai {
-    async fn respond( &self ) -> Response {
-        todo!();
+    async fn respond( &mut self ) -> Response {
+        let mut messages = self.current_conversation.clone();
+        messages.insert(
+            0, 
+            Message { 
+                role: String::from("system"), 
+                content: self.description.clone()
+            });
+        
+        let completion_request = CompletionRequest {
+            model: String::from("gpt-3.5-turbo"),
+            messages
+        };
+
+        let request: String = ureq::post("https://api.openai.com/v1/chat/completions")
+            .set("Authorization", &format!("Bearer {}", env::var("OPENAI_API_KEY").unwrap()))
+            .set("Content-Type", "application/json")
+            .send_string(&serde_json::to_string(&completion_request).unwrap()).unwrap()
+            .into_string().unwrap();
+
+        let deserialized_completion_response: CompletionResponse = serde_json::from_str(&request).unwrap();
+
+        let response_message = deserialized_completion_response.choices[0].message.clone();
+
+        println!("{}", response_message.content);
+        
+        Response {
+            end_conversation: false,
+            content: response_message.content
+        }
     }
     async fn send_message( &mut self, message: String ) {
-        self.current_conversation.push( Message { sender: String::from("mc"), content: message } );
+        self.current_conversation.push( Message { role: String::from("user"), content: message } );
 
-        /*
         let response = self.respond().await;
-        self.current_conversation.push( Message { sender: String::from("monikai"), content: response.content } );
+        self.current_conversation.push( Message { role: String::from("assistant"), content: response.content } );
 
         if response.end_conversation {
             self.end_conversation();
-        }*/
+        }
     }
     async fn end_conversation( &mut self ) {
         let conversation_as_string: String = self.current_conversation
@@ -96,7 +141,7 @@ impl Monikai {
         self.current_conversation = Vec::new();
     }
     fn save_to_file( &self, file_handle: &mut File ) {
-        let self_as_string: String = serde_json::to_string(&self).unwrap();
+        let self_as_string: String = serde_json::to_string_pretty(&self).unwrap();
 
         file_handle.set_len(0).unwrap();
         file_handle.rewind().unwrap();
@@ -121,9 +166,15 @@ async fn main() {
     let mut monikai: Monikai = serde_json::from_str(&character_json_string)
         .expect("Unable to parse!");
 
-    monikai.send_message(String::from("hiiii :3")).await;
+    let stdin = std::io::stdin();
+    let mut buffer = String::new();
 
-    println!("{:?}", monikai);
+    loop {
+        stdin.read_line(&mut buffer).unwrap();
+    
+        monikai.send_message(buffer.clone()).await;
+        buffer.clear();
+    }
 }
 
 
