@@ -1,6 +1,5 @@
 use crate::{ Serialize, Deserialize };
 use crate::env;
-use crate::memory::Embedding;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {

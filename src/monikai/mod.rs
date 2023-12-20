@@ -33,7 +33,7 @@ impl Monikai {
 
         self.respond().await
     }
-    async fn end_conversation( &mut self ) {
+    pub async fn end_conversation( &mut self ) {
         let conversation_as_string: String = self.current_conversation
             .iter()
             .map(|message| message.to_string() )
@@ -45,7 +45,7 @@ impl Monikai {
         self.memories.push(new_memory);
         self.current_conversation = Vec::new();
     }
-    fn save_to_file( &self, file_handle: &mut File ) {
+    pub fn save_to_file( &self, file_handle: &mut File ) {
         let self_as_string: String = serde_json::to_string_pretty(&self).unwrap();
 
         file_handle.set_len(0).unwrap();

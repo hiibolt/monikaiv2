@@ -9,7 +9,6 @@ mod monikai;
 
 #[tokio::main]
 async fn main() {
-    /*
     println!("Initializing Monikai");
 
     let mut character_file_handle: File = OpenOptions::new()
@@ -27,22 +26,45 @@ async fn main() {
 
     let stdin = std::io::stdin();
     let mut buffer = String::new();
-    */
 
-    let conversation = "MC: Hello!\nMonika: Hi!\nMC:Do you have any good book recommendations?\nMonika: Dune - Frank Herbert!!";
-
-    let memory = memory::Memory::new(conversation.to_string()).await;
-        
-    println!("{:?}", memory);
-
-    /*
     loop {
         stdin.read_line(&mut buffer).unwrap();
+
+        // Remove the trailing '\n' character
+        buffer = buffer
+            .split("\n")
+            .nth(0)
+            .unwrap()
+            .to_string();
+
+        // Check for any commandsx
+        match buffer.as_str() {
+            "wipe" => {
+                monikai = monikai::Monikai { 
+                    description: monikai.description.clone(), 
+                    memories: Vec::new(), 
+                    current_conversation: Vec::new() 
+                };
+                println!("[Wiped]");
+            },
+            "save" => {
+                monikai.save_to_file(&mut character_file_handle);
+                println!("[Saved]");
+            },
+            "end" => {
+                monikai.end_conversation().await;
+                println!("[Ended Conversation]");
+            },
+            "log" => {
+                println!("{:?}", monikai);
+            },
+            _ => {
+                monikai.send_message(buffer.clone()).await;
+            }
+        }
     
-        monikai.send_message(buffer.clone()).await;
         buffer.clear();
     }
-    */
 }
 
 
