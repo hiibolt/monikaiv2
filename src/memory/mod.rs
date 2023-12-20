@@ -1,7 +1,7 @@
 use crate::{Serialize, Deserialize};
 use crate::openai;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Memory {
     pub embedding: Embedding,
     pub user_profile: UserProfile,

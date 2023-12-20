@@ -56,7 +56,13 @@ async fn main() {
                 println!("[Ended Conversation]");
             },
             "log" => {
-                println!("{:?}", monikai);
+                let mut monikai_no_embeddings = monikai.clone();
+
+                for memory in monikai_no_embeddings.memories.iter_mut() {
+                    memory.embedding = Vec::new();
+                }
+
+                println!("{}", serde_json::to_string_pretty(&monikai_no_embeddings).unwrap());
             },
             _ => {
                 monikai.send_message(buffer.clone()).await;

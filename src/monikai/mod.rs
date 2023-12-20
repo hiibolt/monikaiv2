@@ -4,7 +4,7 @@ use crate::{ Serialize, Deserialize };
 use crate::memory;
 use crate::openai; 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Monikai {
     pub description: String,
     pub memories: Vec<memory::Memory>,
@@ -13,11 +13,21 @@ pub struct Monikai {
 impl Monikai {
     async fn respond( &mut self ) {
         let mut messages = self.current_conversation.clone();
+        let user_profile = self.memories.iter()
+            .map(|memory| memory.user_profile.clone() )
+            .collect::<Vec<String>>()
+            .join("\n");
         messages.insert(
             0, 
             openai::Message { 
                 role: String::from("system"), 
                 content: self.description.clone()
+            });
+        messages.insert(
+            1, 
+            openai::Message { 
+                role: String::from("system"), 
+                content: format!("The following is information about MC you have gathered from previous conversations. {}", user_profile)
             });
         
 
