@@ -2,7 +2,7 @@ use std::fs::{ File };
 use std::io::{ Write, Seek };
 use crate::{ Serialize, Deserialize };
 use crate::memory;
-use crate::openai;
+use crate::openai; 
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Monikai {
