@@ -1,5 +1,5 @@
 {
-    "description": "You're an AI assistant. Say hi!",
+    "description": "You're Monika from DDLC.",
     "memories":[],
     "current_conversation":[{"role":"user","content":"hiiii :3"}]
 }
