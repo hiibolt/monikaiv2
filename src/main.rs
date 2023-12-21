@@ -12,6 +12,7 @@ use axum::{
     response::{IntoResponse, Html},
     Router,
 };
+use tower_http::services::ServeDir;
 use futures::{sink::SinkExt, stream::StreamExt};
 
 mod openai;
@@ -120,12 +121,15 @@ async fn main() {
     tokio::spawn(monikai_repl( monikai.clone() ));
 
     let app = Router::new()
-        .route("/", get(|| async { Html(std::include_str!("../client/hello.html")) }))
+        .route("/", get(|| async { Html(std::include_str!("../public/index.html")) }))
         .route("/ws", get(websocket_handler))
+        .nest_service("/public", ServeDir::new("public"))
         .with_state(monikai);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
+
+    panic!("unreachable");
 }
 
 async fn websocket_handler(
@@ -141,11 +145,15 @@ async fn websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
 
     // Loop until a text message is found.
     while let Some(Ok(message)) = receiver.next().await {
-        if let axum::extract::ws::Message::Text(name) = message {
-            println!(">{}", name);
+        if let axum::extract::ws::Message::Text(msg) = message {
+            println!("(remote) {}", msg);
+
+            let response = monikai.lock().await.send_message(msg.clone()).await;
+
+            let response_with_emotion = format!(r#"{{"message": "{}", "emotion": "NEUTRAL"}}"#, response);
 
             sender
-                .send(axum::extract::ws::Message::Text(String::from(format!("Meowww :3 >{}", monikai.lock().await.description))))
+                .send(axum::extract::ws::Message::Text(response_with_emotion))
                 .await.unwrap();
         }
     }

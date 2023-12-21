@@ -3,6 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <title>WebSocket Chat</title>
+        <script src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.js"></script>
+		<link href="public/assets/style.css" rel="stylesheet" type="text/css" />
     </head>
     <body>
         <h1>WebSocket Chat Example</h1>
@@ -12,25 +14,41 @@
         <script>
             const input = document.querySelector("#input");
             const response_p = document.querySelector("#response_p");
-
             const websocket = new WebSocket("ws://localhost:3000/ws");
 
             websocket.onopen = function() {
                 console.log("connection opened");
-                websocket.send("[hey im in]");
             }
             websocket.onclose = function() {
                 console.log("connection closed");
             }
             websocket.onmessage = function(e) {
                 console.log("received message: "+e.data);
-                response_p.innerHTML += e.data+"\r\n";
+
+                let res = JSON.parse(e.data);
+
+                response_p.innerHTML += res.message;
             }
             input.onkeydown = function(e) {
                 if (e.key == "Enter") {
                     websocket.send(input.value);
                     input.value = "";
                 }
+            }
+
+            let background_sprite;
+            let character_sprites = {};
+
+            function preload() {
+                background_sprite = loadImage('public/assets/backgrounds/default.png');
+                character_sprites["NEUTRAL"] = loadImage('public/assets/character/NEUTRAL.png');
+            }
+            function setup(){
+                createCanvas( windowWidth, windowHeight );
+            }
+            function draw() {
+                image(background_sprite, 0, 0, windowWidth, windowHeight);
+                image(character_sprites["NEUTRAL"], 0, 0, windowWidth, windowHeight);
             }
         </script>
     </body>

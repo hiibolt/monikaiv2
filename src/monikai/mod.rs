@@ -18,7 +18,7 @@ pub struct Monikai {
     pub current_conversation: Vec<openai::Message>
 }
 impl Monikai {
-    async fn respond( &mut self ) {
+    async fn respond( &mut self ) -> String {
         // First, compile the conversation and user profile
         let mut messages = self.current_conversation.clone();
         let user_profile = self.memories.iter()
@@ -101,10 +101,11 @@ impl Monikai {
 
         print::monikai(&response);
 
-        self.current_conversation.push( openai::Message { role: String::from("assistant"), content: response } );
+        self.current_conversation.push( openai::Message { role: String::from("assistant"), content: response.clone() } );
 
+        response
     }
-    pub async fn send_message( &mut self, message: String ) {
+    pub async fn send_message( &mut self, message: String ) -> String {
         self.current_conversation.push( openai::Message { role: String::from("user"), content: message } );
 
         self.respond().await
