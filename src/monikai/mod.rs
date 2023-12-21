@@ -83,15 +83,16 @@ impl Monikai {
                         a_sim.partial_cmp(&b_sim).unwrap()
                     });
 
-                let most_similar = memories_sorted.last().unwrap();
-                print::debug(&format!("Most similar: {}", most_similar.conversation));
+                if let Some(most_similar) = memories_sorted.last() {
+                    print::debug(&format!("Most similar: {}", most_similar.conversation));
 
-                messages.insert(
-                    2, 
-                    openai::Message { 
-                        role: String::from("system"), 
-                        content: format!("You believe you may need additional information to respond. Here is a related memory: {}", most_similar.conversation)
-                    });
+                    messages.insert(
+                        2, 
+                        openai::Message { 
+                            role: String::from("system"), 
+                            content: format!("You believe you may need additional information to respond. Here is a related memory: {}", most_similar.conversation)
+                        });
+                }
             }
         }
 
