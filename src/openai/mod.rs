@@ -94,10 +94,10 @@ struct EmbeddingData {
     embedding: Vec<f64>
 }
 
-pub async fn embedding_request( input: String ) -> Result<Vec<f64>, ()> {
+pub async fn embedding_request( input: &String ) -> Result<Vec<f64>, ()> {
     let embed_request = serde_json::to_string(&EmbeddingRequest {
         model: String::from("text-embedding-ada-002"),
-        input
+        input: input.clone()
     }).unwrap();
     
     let request: String = ureq::post("https://api.openai.com/v1/embeddings")

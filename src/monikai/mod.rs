@@ -3,10 +3,12 @@ use std::io::{ Write, Seek };
 use crate::{ Serialize, Deserialize };
 use crate::memory;
 use crate::openai; 
+use crate::linalg;
 
 #[derive(Debug, Deserialize)]
 struct MemoryDiveConformation {
-    needs_memory_check: bool
+    needs_memory_check: bool,
+    memory_check_phrase: String
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Monikai {
@@ -42,32 +44,52 @@ impl Monikai {
         // Build the prompt to check if more context is needed to respond
         let memory_check_prompt = format!("
             In the following conversation, you are Monikai.
-            Decide and return JSON on whether based on the user profile and current conversation if you need to check your memory bank.
-            For instance, if your answer can be drawn from the current conversation or what you've learned about the user, no memory check is required.
+            Decide and return JSON on whether based on the user profile and current conversation if you have the context to answer.
+            If not, create a phrase to rack your memory for. For instance, if the user wants to know about a car recommendation:
 
             Example:
             {{
-                \"needs_memory_check\": false
+                \"needs_memory_check\": true,
+                \"memory_check_phrase\": \"car recommendations\"
             }}
 
-            CONVERSATION:
-            {}
             USER PROFILE:
             {}
-            ", messages.iter().last().unwrap().content, user_profile);
+
+            RECENT CONVERSATION:
+            {}
+
+            Response:
+            {{
+            ", user_profile, messages.iter().last().unwrap().content);
 
         // Prompt davinci-003 to decide
         let memory_check_unparsed = openai::instruction_request(memory_check_prompt).await.unwrap();
 
         // If the input parses, try to grab context.
-        if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(&memory_check_unparsed) {
-            println!("MEMORY CHECK: {:?}", memory_check.needs_memory_check);
+        if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(format!("{{{}", memory_check_unparsed).as_str()) {
+            println!("MEMORY CHECK: {:?}", memory_check);
 
             if memory_check.needs_memory_check {
+                let key_phrase_embedding = openai::embedding_request(&memory_check.memory_check_phrase).await.unwrap();
+
+                let mut memories_sorted: Vec<memory::Memory> = self.memories
+                    .clone();
+                    
+                memories_sorted.sort_by(|a, b| {
+                        let a_sim = linalg::cosine_similarity(&key_phrase_embedding, &a.embedding);
+                        let b_sim = linalg::cosine_similarity(&key_phrase_embedding, &b.embedding);
+
+                        a_sim.partial_cmp(&b_sim).unwrap()
+                    });
+
+                let most_similar = memories_sorted.last().unwrap();
+                println!("Most similar: {}", most_similar.conversation);
+
                 messages.push(
                     openai::Message { 
                         role: String::from("system"), 
-                        content: format!("You believe you may need additional information to respond. Please kindly say that you don't know.")
+                        content: format!("You believe you may need additional information to respond. Here is a related memory: {}", most_similar.conversation)
                     });
             }
         }

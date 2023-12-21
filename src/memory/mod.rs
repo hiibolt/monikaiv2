@@ -35,7 +35,7 @@ impl Memory {
         }
     }
     async fn generate_embedding( input: &String ) -> Result<Embedding, ()> {
-        Ok(openai::embedding_request(input.clone()).await.unwrap())
+        Ok(openai::embedding_request(input).await.unwrap())
     }
     async fn generate_user_profile( input: &String ) -> Result<UserProfile, ()> {
         let prompt = format!("

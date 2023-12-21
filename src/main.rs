@@ -6,6 +6,7 @@ use serde::{ Serialize, Deserialize };
 mod openai;
 mod memory;
 mod monikai;
+mod linalg;
 
 #[tokio::main]
 async fn main() {
@@ -64,6 +65,25 @@ async fn main() {
 
                 println!("{}", serde_json::to_string_pretty(&monikai_no_embeddings).unwrap());
             },
+            "get" => {
+                println!("> Please enter a key phrase to search by");
+                let mut keyword = String::new();
+                stdin.read_line(&mut keyword).unwrap();
+
+                let key_phrase_embedding = openai::embedding_request(&keyword).await.unwrap();
+
+                let mut memories_sorted: Vec<memory::Memory> = monikai.memories
+                    .clone();
+                    
+                memories_sorted.sort_by(|a, b| {
+                        let a_sim = linalg::cosine_similarity(&key_phrase_embedding, &a.embedding);
+                        let b_sim = linalg::cosine_similarity(&key_phrase_embedding, &b.embedding);
+
+                        a_sim.partial_cmp(&b_sim).unwrap()
+                    });
+
+                println!("Most similar: {}", memories_sorted.last().unwrap().conversation);
+            }
             _ => {
                 monikai.send_message(buffer.clone()).await;
             }
