@@ -1,12 +1,18 @@
-use std::fs::{ OpenOptions, File };
-use std::env;
-use std::sync::{ Arc };
+use std::{
+    fs::{ OpenOptions, File },
+    env,
+    io::Read,
+    sync::{ Arc }
+};
 use tokio::sync::Mutex;
 use serde::{ Serialize, Deserialize };
-use std::{
-    io::{ Read, prelude::*, BufReader },
-    net::{TcpListener, TcpStream},
+use axum::{
+    extract::ws::{WebSocketUpgrade, WebSocket},
+    routing::get,
+    response::{IntoResponse, Html},
+    Router,
 };
+use futures::{sink::SinkExt, stream::StreamExt};
 
 mod openai;
 mod memory;
@@ -14,7 +20,7 @@ mod monikai;
 mod linalg;
 mod print;
 
-async fn REPL( monikai: Arc<Mutex<monikai::Monikai>> ) {
+async fn monikai_repl( monikai: Arc<Mutex<monikai::Monikai>> ) {
     let mut character_file_handle: File = OpenOptions::new()
         .read(true)
         .write(true)
@@ -49,7 +55,7 @@ async fn REPL( monikai: Arc<Mutex<monikai::Monikai>> ) {
                 print::info("Saved");
             },
             "end" => {
-                monikai.lock().await.end_conversation();
+                monikai.lock().await.end_conversation().await;
                 print::info("Ended Conversation");
             },
             "log" => {
@@ -105,49 +111,45 @@ async fn main() {
     character_file_handle.read_to_string(&mut character_json_string)
         .expect("Unable to read './data/monikai.json'!");
 
-    let mut monikai = Arc::new(
+    let monikai = Arc::new(
         Mutex::new(
             serde_json::from_str::<monikai::Monikai>(&character_json_string)
                 .expect("Unable to parse!")
         ));
 
-    tokio::spawn(REPL( monikai.clone() ));
+    tokio::spawn(monikai_repl( monikai.clone() ));
 
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
+    let app = Router::new()
+        .route("/", get(|| async { Html(std::include_str!("../client/hello.html")) }))
+        .route("/ws", get(websocket_handler))
+        .with_state(monikai);
 
-        handle_connection(stream);
-        println!("Connection established!");
-    }
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
-    let http_request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
-    println!("{:?}", http_request);
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+    axum::extract::State(state): axum::extract::State<Arc<Mutex<monikai::Monikai>>>,
+) -> impl IntoResponse {
+    println!("Connection!");
+    ws.on_upgrade(|socket| websocket(socket, state))
+}
+async fn websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
+    // By splitting, we can send and receive at the same time.
+    let (mut sender, mut receiver) = stream.split();
 
-    let request_type = &http_request[0];
+    // Loop until a text message is found.
+    while let Some(Ok(message)) = receiver.next().await {
+        if let axum::extract::ws::Message::Text(name) = message {
+            println!(">{}", name);
 
-    if request_type == "GET / HTTP/1.1" {
-        let status_line = "HTTP/1.1 200 OK";
-    
-        let contents = std::fs::read_to_string("client/hello.html").unwrap();
-    
-        let length = contents.len();
-    
-        let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
-    
-        stream.write_all(response.as_bytes()).unwrap();
-    } else {
-        println!("Bad request!");
+            sender
+                .send(axum::extract::ws::Message::Text(String::from(format!("Meowww :3 >{}", monikai.lock().await.description))))
+                .await.unwrap();
+        }
     }
 }
-
 
 
 #[cfg(test)]
