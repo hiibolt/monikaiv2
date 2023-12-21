@@ -72,6 +72,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "colorama"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2140224647bbc753e98f6eb36c8780a2f7cf474ae542302df44b2786908b62de"
+
+[[package]]
 name = "crc32fast"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -190,6 +196,7 @@ dependencies = [
 name = "monikaiv2"
 version = "0.1.0"
 dependencies = [
+ "colorama",
  "serde",
  "serde_json",
  "tokio",

@@ -7,10 +7,11 @@ mod openai;
 mod memory;
 mod monikai;
 mod linalg;
+mod print;
 
 #[tokio::main]
 async fn main() {
-    println!("Initializing Monikai");
+    print::info("Initializing Monikai");
 
     let mut character_file_handle: File = OpenOptions::new()
         .read(true)
@@ -46,27 +47,29 @@ async fn main() {
                     memories: Vec::new(), 
                     current_conversation: Vec::new() 
                 };
-                println!("[Wiped]");
+                print::info("Wiped");
             },
             "save" => {
                 monikai.save_to_file(&mut character_file_handle);
-                println!("[Saved]");
+                print::info("Saved");
             },
             "end" => {
                 monikai.end_conversation().await;
-                println!("[Ended Conversation]");
+                print::info("Ended Conversation");
             },
             "log" => {
+                print::info("Logging");
+                
                 let mut monikai_no_embeddings = monikai.clone();
 
                 for memory in monikai_no_embeddings.memories.iter_mut() {
                     memory.embedding = Vec::new();
                 }
 
-                println!("{}", serde_json::to_string_pretty(&monikai_no_embeddings).unwrap());
+                print::debug(&serde_json::to_string_pretty(&monikai_no_embeddings).unwrap());
             },
             "get" => {
-                println!("> Please enter a key phrase to search by");
+                print::info("Please enter a key phrase to search by");
                 let mut keyword = String::new();
                 stdin.read_line(&mut keyword).unwrap();
 
@@ -82,7 +85,7 @@ async fn main() {
                         a_sim.partial_cmp(&b_sim).unwrap()
                     });
 
-                println!("Most similar: {}", memories_sorted.last().unwrap().conversation);
+                print::debug(&format!("Most similar: {}", memories_sorted.last().unwrap().conversation));
             }
             _ => {
                 monikai.send_message(buffer.clone()).await;

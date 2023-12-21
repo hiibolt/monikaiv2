@@ -4,6 +4,7 @@ use crate::{ Serialize, Deserialize };
 use crate::memory;
 use crate::openai; 
 use crate::linalg;
+use crate::print;
 
 #[derive(Debug, Deserialize)]
 struct MemoryDiveConformation {
@@ -68,9 +69,8 @@ impl Monikai {
 
         // If the input parses, try to grab context.
         if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(format!("{{{}", memory_check_unparsed).as_str()) {
-            println!("MEMORY CHECK: {:?}", memory_check);
-
             if memory_check.needs_memory_check {
+                print::debug("Need to perform memory check!");
                 let key_phrase_embedding = openai::embedding_request(&memory_check.memory_check_phrase).await.unwrap();
 
                 let mut memories_sorted: Vec<memory::Memory> = self.memories
@@ -84,9 +84,10 @@ impl Monikai {
                     });
 
                 let most_similar = memories_sorted.last().unwrap();
-                println!("Most similar: {}", most_similar.conversation);
+                print::debug(&format!("Most similar: {}", most_similar.conversation));
 
-                messages.push(
+                messages.insert(
+                    2, 
                     openai::Message { 
                         role: String::from("system"), 
                         content: format!("You believe you may need additional information to respond. Here is a related memory: {}", most_similar.conversation)
@@ -97,7 +98,7 @@ impl Monikai {
         // Finally, prompt the model
         let response = openai::turbo_request( messages ).await.unwrap().content;
 
-        println!("{}", response);
+        print::monikai(&response);
 
         self.current_conversation.push( openai::Message { role: String::from("assistant"), content: response } );
 
