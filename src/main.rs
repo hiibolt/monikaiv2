@@ -43,12 +43,16 @@ async fn monikai_repl( monikai: Arc<Mutex<monikai::Monikai>> ) {
 
         // Check for any commandsx
         match buffer.as_str() {
+            "clear" => panic!("This isn't a terminal, you know..."),
             "wipe" => {
+                let description = monikai.lock().await.description.clone();
+
                 *monikai.lock().await = monikai::Monikai { 
-                    description: monikai.lock().await.description.clone(), 
+                    description, 
                     memories: Vec::new(), 
                     current_conversation: Vec::new() 
                 };
+
                 print::info("Wiped");
             },
             "save" => {
