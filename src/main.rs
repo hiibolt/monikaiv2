@@ -9,7 +9,7 @@ use serde::{ Serialize, Deserialize };
 use axum::{
     extract::ws::{WebSocketUpgrade, WebSocket},
     routing::get,
-    response::{IntoResponse, Html},
+    response::{ Html},
     Router,
 };
 use tower_http::services::ServeDir;
@@ -97,49 +97,25 @@ async fn monikai_repl( monikai: Arc<Mutex<monikai::Monikai>> ) {
         buffer.clear();
     }
 }
-
-#[tokio::main]
-async fn main() {
-    print::info("Initializing Monikai");
-
-    let mut character_file_handle: File = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("data/monikai.json")
-        .expect("Unable to get handle on './data/monikai.json'!");
-
-    let mut character_json_string = String::new();
-    character_file_handle.read_to_string(&mut character_json_string)
-        .expect("Unable to read './data/monikai.json'!");
-
-    let monikai = Arc::new(
-        Mutex::new(
-            serde_json::from_str::<monikai::Monikai>(&character_json_string)
-                .expect("Unable to parse!")
-        ));
-
-    tokio::spawn(monikai_repl( monikai.clone() ));
-
+async fn monikai_frontend( monikai: Arc<Mutex<monikai::Monikai>>) {
     let app = Router::new()
         .route("/", get(|| async { Html(std::include_str!("../public/index.html")) }))
-        .route("/ws", get(websocket_handler))
+        .route("/ws", get(
+            |
+                ws: WebSocketUpgrade,
+                axum::extract::State(state): axum::extract::State<Arc<Mutex<monikai::Monikai>>>,
+            | async {
+                println!("Connection!");
+                ws.on_upgrade(|socket| monikai_websocket(socket, state))
+            }
+        ))
         .nest_service("/public", ServeDir::new("public"))
         .with_state(monikai);
-
+        
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
-
-    panic!("unreachable");
 }
-
-async fn websocket_handler(
-    ws: WebSocketUpgrade,
-    axum::extract::State(state): axum::extract::State<Arc<Mutex<monikai::Monikai>>>,
-) -> impl IntoResponse {
-    println!("Connection!");
-    ws.on_upgrade(|socket| websocket(socket, state))
-}
-async fn websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
+async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
     // By splitting, we can send and receive at the same time.
     let (mut sender, mut receiver) = stream.split();
 
@@ -157,6 +133,41 @@ async fn websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
                 .await.unwrap();
         }
     }
+}
+
+#[tokio::main]
+async fn main() {
+    print::info("Initializing Monikai");
+    // Open the data file
+    let mut character_file_handle: File = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("data/monikai.json")
+        .expect("Unable to get handle on './data/monikai.json'!");
+
+    // Read from said data file
+    let mut character_json_string = String::new();
+    character_file_handle.read_to_string(&mut character_json_string)
+        .expect("Unable to read './data/monikai.json'!");
+
+    // Close the file handle
+    drop(character_file_handle);
+    print::info("Done!");
+
+    // Build a thread and asynchronus reference to the character
+    let monikai = Arc::new(
+        Mutex::new(
+            serde_json::from_str::<monikai::Monikai>(&character_json_string)
+                .expect("Unable to parse!")
+        ));
+
+    // Start the repl and frontend
+    tokio::spawn(monikai_repl( monikai.clone() ));
+    tokio::spawn(monikai_frontend( monikai.clone() ));
+
+    // I may need to look into doing this a different way.
+    // However, I'll probably end up using the main fn for timing tasks and plugins.
+    loop {}
 }
 
 
