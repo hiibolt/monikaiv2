@@ -1,7 +1,10 @@
 use std::fs::{ OpenOptions, File };
 use std::io::{ Read };
 use std::env;
+use std::sync::{ Arc };
+use tokio::sync::Mutex;
 use serde::{ Serialize, Deserialize };
+use std::net::TcpListener;
 
 mod openai;
 mod memory;
@@ -9,22 +12,12 @@ mod monikai;
 mod linalg;
 mod print;
 
-#[tokio::main]
-async fn main() {
-    print::info("Initializing Monikai");
-
+async fn REPL( monikai: Arc<Mutex<monikai::Monikai>> ) {
     let mut character_file_handle: File = OpenOptions::new()
         .read(true)
         .write(true)
         .open("data/monikai.json")
         .expect("Unable to get handle on './data/monikai.json'!");
-
-    let mut character_json_string = String::new();
-    character_file_handle.read_to_string(&mut character_json_string)
-        .expect("Unable to read './data/monikai.json'!");
-
-    let mut monikai: monikai::Monikai = serde_json::from_str(&character_json_string)
-        .expect("Unable to parse!");
 
     let stdin = std::io::stdin();
     let mut buffer = String::new();
@@ -42,25 +35,25 @@ async fn main() {
         // Check for any commandsx
         match buffer.as_str() {
             "wipe" => {
-                monikai = monikai::Monikai { 
-                    description: monikai.description.clone(), 
+                *monikai.lock().await = monikai::Monikai { 
+                    description: monikai.lock().await.description.clone(), 
                     memories: Vec::new(), 
                     current_conversation: Vec::new() 
                 };
                 print::info("Wiped");
             },
             "save" => {
-                monikai.save_to_file(&mut character_file_handle);
+                monikai.lock().await.save_to_file(&mut character_file_handle);
                 print::info("Saved");
             },
             "end" => {
-                monikai.end_conversation().await;
+                monikai.lock().await.end_conversation();
                 print::info("Ended Conversation");
             },
             "log" => {
                 print::info("Logging");
-                
-                let mut monikai_no_embeddings = monikai.clone();
+
+                let mut monikai_no_embeddings = monikai.lock().await.clone();
 
                 for memory in monikai_no_embeddings.memories.iter_mut() {
                     memory.embedding = Vec::new();
@@ -75,7 +68,7 @@ async fn main() {
 
                 let key_phrase_embedding = openai::embedding_request(&keyword).await.unwrap();
 
-                let mut memories_sorted: Vec<memory::Memory> = monikai.memories
+                let mut memories_sorted: Vec<memory::Memory> = monikai.lock().await.memories
                     .clone();
                     
                 memories_sorted.sort_by(|a, b| {
@@ -88,11 +81,40 @@ async fn main() {
                 print::debug(&format!("Most similar: {}", memories_sorted.last().unwrap().conversation));
             }
             _ => {
-                monikai.send_message(buffer.clone()).await;
+                monikai.lock().await.send_message(buffer.clone()).await;
             }
         }
     
         buffer.clear();
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    print::info("Initializing Monikai");
+
+    let mut character_file_handle: File = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("data/monikai.json")
+        .expect("Unable to get handle on './data/monikai.json'!");
+
+    let mut character_json_string = String::new();
+    character_file_handle.read_to_string(&mut character_json_string)
+        .expect("Unable to read './data/monikai.json'!");
+
+    let mut monikai = Arc::new(
+        Mutex::new(
+            serde_json::from_str::<monikai::Monikai>(&character_json_string)
+                .expect("Unable to parse!")
+        ));
+
+    tokio::spawn(REPL( monikai.clone() ));
+
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+        println!("Connection established!");
     }
 }
 
