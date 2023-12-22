@@ -50,7 +50,7 @@ async fn build_monikai_repl() -> Result<(), ()> {
         ));
 
     // Start the repl and frontend
-    tokio::spawn(monikai_repl( monikai.clone() ));
+    tokio::spawn(monikai::monikai_repl( monikai.clone() ));
 
     Ok(())
 }
@@ -80,7 +80,7 @@ async fn build_monikai_backend() -> Result<(), ()> {
         ));
 
     // Start the repl and backend
-    tokio::spawn(monikai_backend( monikai.clone() ));
+    tokio::spawn(monikai::monikai_backend( monikai.clone() ));
 
     Ok(())
 }

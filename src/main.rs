@@ -1,3 +1,11 @@
+#[cfg(test)]
+mod tests;
+mod openai;
+mod memory;
+mod monikai;
+mod linalg;
+mod print;
+
 use std::{
     fs::{ OpenOptions, File },
     env,
@@ -6,141 +14,7 @@ use std::{
 };
 use tokio::sync::Mutex;
 use serde::{ Serialize, Deserialize };
-use axum::{
-    extract::ws::{WebSocketUpgrade, WebSocket},
-    routing::get,
-    response::{ Html},
-    Router,
-};
-use tower_http::services::ServeDir;
-use futures::{sink::SinkExt, stream::StreamExt};
 
-mod openai;
-mod memory;
-mod monikai;
-mod linalg;
-mod print;
-
-#[cfg(test)]
-mod tests;
-
-async fn monikai_repl( monikai: Arc<Mutex<monikai::Monikai>> ) {
-    let mut character_file_handle: File = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("data/monikai.json")
-        .expect("Unable to get handle on './data/monikai.json'!");
-
-    let stdin = std::io::stdin();
-    let mut buffer = String::new();
-
-    loop {
-        stdin.read_line(&mut buffer).unwrap();
-
-        // Remove the trailing '\n' character
-        buffer = buffer
-            .split("\n")
-            .nth(0)
-            .unwrap()
-            .to_string();
-
-        // Check for any commandsx
-        match buffer.as_str() {
-            "clear" => panic!("This isn't a terminal, you know..."),
-            "wipe" => {
-                let description = monikai.lock().await.description.clone();
-
-                *monikai.lock().await = monikai::Monikai { 
-                    description, 
-                    memories: Vec::new(), 
-                    current_conversation: Vec::new() 
-                };
-
-                print::info("Wiped");
-            },
-            "save" => {
-                monikai.lock().await.save_to_file(&mut character_file_handle);
-                print::info("Saved");
-            },
-            "end" => {
-                monikai.lock().await.end_conversation().await;
-                print::info("Ended Conversation");
-            },
-            "log" => {
-                print::info("Logging");
-
-                let mut monikai_no_embeddings = monikai.lock().await.clone();
-
-                for memory in monikai_no_embeddings.memories.iter_mut() {
-                    memory.embedding = Vec::new();
-                }
-
-                print::debug(&serde_json::to_string_pretty(&monikai_no_embeddings).unwrap());
-            },
-            "get" => {
-                print::info("Please enter a key phrase to search by");
-                let mut keyword = String::new();
-                stdin.read_line(&mut keyword).unwrap();
-
-                let key_phrase_embedding = openai::embedding_request(&keyword).await.unwrap();
-
-                let mut memories_sorted: Vec<memory::Memory> = monikai.lock().await.memories
-                    .clone();
-                    
-                memories_sorted.sort_by(|a, b| {
-                        let a_sim = linalg::cosine_similarity(&key_phrase_embedding, &a.embedding);
-                        let b_sim = linalg::cosine_similarity(&key_phrase_embedding, &b.embedding);
-
-                        a_sim.partial_cmp(&b_sim).unwrap()
-                    });
-
-                print::debug(&format!("Most similar: {}", memories_sorted.last().unwrap().conversation));
-            }
-            _ => {
-                monikai.lock().await.send_message(buffer.clone()).await;
-            }
-        }
-    
-        buffer.clear();
-    }
-}
-async fn monikai_backend( monikai: Arc<Mutex<monikai::Monikai>>) {
-    let app = Router::new()
-        .route("/", get(|| async { Html(std::include_str!("../public/index.html")) }))
-        .route("/ws", get(
-            |
-                ws: WebSocketUpgrade,
-                axum::extract::State(state): axum::extract::State<Arc<Mutex<monikai::Monikai>>>,
-            | async {
-                println!("Connection!");
-                ws.on_upgrade(|socket| monikai_websocket(socket, state))
-            }
-        ))
-        .nest_service("/public", ServeDir::new("public"))
-        .with_state(monikai);
-        
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-}
-async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<monikai::Monikai>>) {
-    // By splitting, we can send and receive at the same time.
-    let (mut sender, mut receiver) = stream.split();
-
-    // Loop until a text message is found.
-    while let Some(Ok(message)) = receiver.next().await {
-        if let axum::extract::ws::Message::Text(msg) = message {
-            println!("(remote) {}", msg);
-
-            let response = monikai.lock().await.send_message(msg.clone()).await;
-
-            let response_with_emotion = format!(r#"{{"message": "{}", "emotion": "NEUTRAL"}}"#, response);
-
-            sender
-                .send(axum::extract::ws::Message::Text(response_with_emotion))
-                .await.unwrap();
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() {
@@ -169,8 +43,8 @@ async fn main() {
         ));
 
     // Start the repl and frontend
-    tokio::spawn(monikai_repl( monikai.clone() ));
-    tokio::spawn(monikai_backend( monikai.clone() ));
+    tokio::spawn(monikai::monikai_repl( monikai.clone() ));
+    tokio::spawn(monikai::monikai_backend( monikai.clone() ));
 
     // I may need to look into doing this a different way.
     // However, I'll probably end up using the main fn for timing tasks and plugins.
