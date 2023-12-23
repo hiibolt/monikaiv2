@@ -16,6 +16,12 @@
             const response_p = document.querySelector("#response_p");
             const websocket = new WebSocket("ws://localhost:3000/ws");
 
+            let background_sprite;
+            let character_sprites = {};
+            let current_emotion = "NEUTRAL";
+            let current_message = "";
+            let current_message_timer = 0; 
+
             websocket.onopen = function() {
                 console.log("connection opened");
             }
@@ -27,7 +33,9 @@
 
                 let res = JSON.parse(e.data);
 
-                response_p.innerHTML += res.message;
+                current_message = res.message;
+                current_emotion = res.emotion;
+                current_message_timer = Date.now();
             }
             input.onkeydown = function(e) {
                 if (e.key == "Enter") {
@@ -36,19 +44,32 @@
                 }
             }
 
-            let background_sprite;
-            let character_sprites = {};
 
             function preload() {
                 background_sprite = loadImage('public/assets/backgrounds/default.png');
-                character_sprites["NEUTRAL"] = loadImage('public/assets/character/NEUTRAL.png');
+
+                let emotions = ["CONCERNED", "CRYING", "LAUGHING", "NEUTRAL", "SAD"];
+                for (let emotion of emotions) {
+                    character_sprites[emotion] = loadImage(`public/assets/character/${emotion}.png`);
+                    character_sprites[emotion + "SPEAKING"] = loadImage(`public/assets/character/${emotion}SPEAKING.png`);
+                }
             }
             function setup(){
                 createCanvas( windowWidth, windowHeight );
             }
             function draw() {
-                image(background_sprite, 0, 0, windowWidth, windowHeight);
-                image(character_sprites["NEUTRAL"], 0, 0, windowWidth, windowHeight);
+                background( 255, 255, 255 );
+
+                let background_y_scalar = windowHeight / background_sprite.height;
+
+                let background_width = windowWidth * background_y_scalar;
+                let background_height = windowHeight;
+                let background_x_offset = windowWidth / 2;
+
+                image(background_sprite, background_x_offset - background_width / 2, 0, background_width, background_height);
+                image(character_sprites[current_emotion], background_x_offset - background_width / 1.25 / 2, background_height - (background_height / 1.25 * (character_sprites[current_emotion].height / character_sprites[current_emotion].width)), background_width / 1.25, background_height / 1.25 * (character_sprites[current_emotion].height / character_sprites[current_emotion].width));
+
+                response_p.innerHTML = current_message.substring(0, floor((Date.now() - current_message_timer) / 20));
             }
         </script>
     </body>

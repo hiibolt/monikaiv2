@@ -50,5 +50,3 @@ async fn main() {
     // However, I'll probably end up using the main fn for timing tasks and plugins.
     loop {}
 }
-
-

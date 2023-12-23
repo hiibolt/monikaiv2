@@ -270,8 +270,35 @@ async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<Monikai>>) {
             println!("(remote) {}", msg);
 
             let response = monikai.lock().await.send_message(msg.clone()).await;
+            let conversation = monikai.lock().await.current_conversation
+                .iter()
+                .map(|message| message.to_string())
+                .collect::<Vec<String>>()
+                .join("\n");
+            let description = monikai.lock().await.description.clone();
 
-            let response_with_emotion = format!(r#"{{"message": "{}", "emotion": "NEUTRAL"}}"#, response);
+            let emotion = openai::instruction_request(format!("
+                {}
+
+                Based on the conversation, create an meotion (NEUTRAL | SAD | CRYING | LAUGHING | CONCERNED) that pairs well with your.
+
+                Example:
+                {{
+                    \"message\": \"blah blah blah\",
+                    \"emotion\": \"NEUTRAL | SAD | CRYING | LAUGHING | CONCERNED\"
+                }}
+
+                CONVERSATION:
+                {}
+
+                NEXT RESPONSE:
+                {}
+
+                {{
+                    \"message\": \"{}\",
+            ", description, conversation, response, response)).await.unwrap();
+
+            let response_with_emotion = format!(r#"{{"message": "{}",{}"#, response, emotion);
 
             sender
                 .send(axum::extract::ws::Message::Text(response_with_emotion))
