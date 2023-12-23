@@ -1,12 +1,14 @@
 use crate::{Serialize, Deserialize};
 use crate::openai;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Memory {
     pub embedding: Embedding,
     pub user_profile: UserProfile,
     pub interaction_summary: InteractionSummary,
-    pub conversation: Conversation
+    pub conversation: Conversation,
+    pub timestamp: u64
 }
 pub type Embedding = Vec<f64>;
 pub type UserProfile = String;
@@ -14,6 +16,11 @@ pub type InteractionSummary = String;
 pub type Conversation = String;
 impl Memory {
     pub async fn new( conversation: String ) -> Self {
+        // Creates the time first, since the later parts can cause notable delay.
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         /*
          Generates the embeddings, user profile, and summary asynchronously.
          Finally, returns the generated Memory object.
@@ -28,7 +35,8 @@ impl Memory {
                     embedding,
                     user_profile, 
                     interaction_summary,
-                    conversation
+                    conversation,
+                    timestamp
                 }
             }
             Err(_) => todo!()
@@ -70,5 +78,22 @@ impl Memory {
         ", input);
 
         Ok(openai::instruction_request(prompt).await.unwrap())
+    }
+    pub fn readable_time_since( &self ) -> String {
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let seconds_since = current_time.saturating_sub( self.timestamp );
+
+        if seconds_since > 86400 {
+            return format!("{} days", seconds_since / 86400);
+        } else if seconds_since > 3600 {
+            return format!("{} hours", seconds_since / 3600);
+        } else if seconds_since > 60 {
+            return format!("{} minutes", seconds_since / 60);
+        }
+        format!("{} seconds", seconds_since)
     }
 }

@@ -101,7 +101,7 @@ impl Monikai {
                         2, 
                         openai::Message { 
                             role: String::from("system"), 
-                            content: format!("You believe you may need additional information to respond. Here is a related memory: {}", most_similar.conversation)
+                            content: format!("You believe you may need additional information to respond. Here is a related memory from {} ago: {}", most_similar.readable_time_since(), most_similar.conversation)
                         });
                 }
             }
