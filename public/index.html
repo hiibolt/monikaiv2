@@ -9,18 +9,18 @@
     <body>
         <div class="message_div">
             <textarea id="player_input"></textarea>
-            <p id="response_p"></p>
         </div>
 
         <script>
             const input = document.querySelector("#player_input");
-            const response_p = document.querySelector("#response_p");
             const websocket = new WebSocket("ws://localhost:3000/ws");
 
             let background_sprite;
             let character_sprites = {};
+            let speech_font;
+
             let current_emotion = "NEUTRAL";
-            let current_message = "";
+            let current_message = "testing message deletelater testing message d e l e te l a t e r testing message deletelater testing message deletelater";
             let current_message_timer = 0; 
 
             websocket.onopen = function() {
@@ -50,6 +50,8 @@
 
             function preload() {
                 background_sprite = loadImage('public/assets/backgrounds/default.png');
+                textbox_sprite = loadImage('public/assets/gui/TEXTBOX_NASTYA.png');
+                speech_font = loadFont('public/assets/fonts/ALLER.ttf');
 
                 let emotions = ["CONCERNED", "CRYING", "LAUGHING", "NEUTRAL", "SAD"];
                 for (let emotion of emotions) {
@@ -69,22 +71,28 @@
                 translate( (windowWidth / 2) - ((1280 * background_scalar) / 2), 0);
                 scale(background_scalar);
                 
-                tint(0,0,0,255/2);
+                // Background Sprite
                 image(background_sprite, 0, 0, 1280, 800);
 
+                // Character Sprite Handling
                 let char_ind = floor((Date.now() - current_message_timer) / 20);
-
-                if ( char_ind < current_message.length || current_message[char_ind] == '.' ) {
-                    tint(0,0,0,255/2);
+                if ( char_ind < current_message.length && current_message.length > 0 ) {
                     image(character_sprites[current_emotion + "SPEAKING"], (1280 - 960) / 2, 0, 960, 960);
                 } else {
-                    tint(0,0,0,255);
                     image(character_sprites[current_emotion], (1280 - 960) / 2, 0, 960, 960);
                 }
 
+                // Textbox Sprite Handling
+                image(textbox_sprite, (1280 / 2) - (800 / 2), 535, 800, 260);
+
+                fill(255);
+                noStroke();
+                textFont(speech_font);
+                textSize(30);
+                text(current_message.substring(0, char_ind), (1280 / 2) - (800 / 2) + 40, 565, 725, 500);
+
                 pop();
 
-                response_p.innerHTML = current_message.substring(0, char_ind);
             }
         </script>
     </body>
