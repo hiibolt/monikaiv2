@@ -294,11 +294,10 @@ async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<Monikai>>) {
                 NEXT RESPONSE:
                 {}
 
-                {{
-                    \"message\": \"{}\",
+                {{\"message\":\"{}\",\"emotion\":
             ", description, conversation, response, response)).await.unwrap();
 
-            let response_with_emotion = format!(r#"{{"message": "{}",{}"#, response, emotion);
+            let response_with_emotion = format!(r#"{{"message": "{}","emotion":{}"#, response, emotion);
 
             sender
                 .send(axum::extract::ws::Message::Text(response_with_emotion))
