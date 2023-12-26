@@ -14,8 +14,11 @@ body {
   font-family: aller_bold;
   src: url(/public/assets/fonts/ALLER.ttf);
 }
-#message_div {
-  margin: auto;
+.message_div {
+  position: absolute;
+  right: 50%;
+  bottom: 20%;
+  transform: translateX(50%) translateY(50%);
 }
 #player_input {
 	background-color: transparent; /* Set the background color to transparent */
@@ -26,8 +29,10 @@ body {
 	
 	resize: none;
 	
-	position: absolute;
-	display: block;
+  text-align: center;
+
+  width: 65vh;
+  height: 15vh;
 
   color: white; /* Set the text color */
 }
