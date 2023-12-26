@@ -7,12 +7,13 @@
 		<link href="public/style.css" rel="stylesheet" type="text/css" />
     </head>
     <body>
-        <h1>WebSocket Chat Example</h1>
-        <input id="input" style="display:block; width:600px; box-sizing: border-box" type="text" placeholder="chat">
-        <p id="response_p"></p>
+        <div id="message_div">
+            <input id="player_input"></input>
+            <p id="response_p"></p>
+        </div>
 
         <script>
-            const input = document.querySelector("#input");
+            const input = document.querySelector("#player_input");
             const response_p = document.querySelector("#response_p");
             const websocket = new WebSocket("ws://localhost:3000/ws");
 
@@ -34,7 +35,9 @@
                 let res = JSON.parse(e.data);
 
                 current_message = res.message;
-                current_emotion = res.emotion;
+                if ( character_sprites[res.emotion] ) {
+                    current_emotion = res.emotion;
+                }
                 current_message_timer = Date.now();
             }
             input.onkeydown = function(e) {
@@ -60,16 +63,28 @@
             function draw() {
                 background( 255, 255, 255 );
 
-                let background_y_scalar = windowHeight / background_sprite.height;
+                let background_scalar = windowHeight / background_sprite.height;
+                
+                push();
+                translate( (windowWidth / 2) - ((1280 * background_scalar) / 2), 0);
+                scale(background_scalar);
+                
+                tint(0,0,0,255/2);
+                image(background_sprite, 0, 0, 1280, 800);
 
-                let background_width = windowWidth * background_y_scalar;
-                let background_height = windowHeight;
-                let background_x_offset = windowWidth / 2;
+                let char_ind = floor((Date.now() - current_message_timer) / 20);
 
-                image(background_sprite, background_x_offset - background_width / 2, 0, background_width, background_height);
-                image(character_sprites[current_emotion], background_x_offset - background_width / 1.25 / 2, background_height - (background_height / 1.25 * (character_sprites[current_emotion].height / character_sprites[current_emotion].width)), background_width / 1.25, background_height / 1.25 * (character_sprites[current_emotion].height / character_sprites[current_emotion].width));
+                if ( char_ind < current_message.length || current_message[char_ind] == '.' ) {
+                    tint(0,0,0,255/2);
+                    image(character_sprites[current_emotion + "SPEAKING"], (1280 - 960) / 2, 0, 960, 960);
+                } else {
+                    tint(0,0,0,255);
+                    image(character_sprites[current_emotion], (1280 - 960) / 2, 0, 960, 960);
+                }
 
-                response_p.innerHTML = current_message.substring(0, floor((Date.now() - current_message_timer) / 20));
+                pop();
+
+                response_p.innerHTML = current_message.substring(0, char_ind);
             }
         </script>
     </body>

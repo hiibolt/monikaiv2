@@ -8,17 +8,16 @@ canvas {
 	  z-index: -9999;
 }
 body {
-    margin: 0%;
     overflow: hidden;
 }
 @font-face {
   font-family: aller_bold;
-  src: url(/public/assets/fonts/aller.ttf);
+  src: url(/public/assets/fonts/ALLER.ttf);
 }
-textarea:focus, input:focus{
-    outline: none; /* Remove focused borders */
+#message_div {
+  margin: auto;
 }
-.player_message {
+#player_input {
 	background-color: transparent; /* Set the background color to transparent */
   border: white; /* Remove the border */
 	border-style: dashed;
@@ -32,6 +31,6 @@ textarea:focus, input:focus{
 
   color: white; /* Set the text color */
 }
-.player_message::selection {
+#player_input::selection {
   background-color: rgba(255, 192, 203, 0.5);
 }
