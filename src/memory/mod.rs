@@ -88,11 +88,11 @@ impl Memory {
         let seconds_since = current_time.saturating_sub( self.timestamp );
 
         if seconds_since > 86400 {
-            return format!("{} days", seconds_since / 86400);
+            return format!("{} day/s", seconds_since / 86400);
         } else if seconds_since > 3600 {
-            return format!("{} hours", seconds_since / 3600);
+            return format!("{} hour/s", seconds_since / 3600);
         } else if seconds_since > 60 {
-            return format!("{} minutes", seconds_since / 60);
+            return format!("{} minute/s", seconds_since / 60);
         }
         format!("{} seconds", seconds_since)
     }

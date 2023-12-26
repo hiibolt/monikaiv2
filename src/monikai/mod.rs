@@ -144,7 +144,7 @@ impl Monikai {
 
 /* 
  A Read-Eval-Print Loop (REPL) for Monikai.
- Probably the least convuleted method of communication.
+ Probably the least convoluted method of communication.
 
  Saying something that's not a command forwards said message to the Monikai.
 
