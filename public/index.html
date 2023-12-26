@@ -12,7 +12,7 @@
         </div>
 
         <script>
-            const input = document.querySelector("#player_input");
+            const player_input = document.querySelector("#player_input");
             const websocket = new WebSocket("ws://localhost:3000/ws");
 
             let background_sprite;
@@ -20,8 +20,9 @@
             let speech_font;
 
             let current_emotion = "NEUTRAL";
-            let current_message = "testing message deletelater testing message d e l e te l a t e r testing message deletelater testing message deletelater";
+            let current_message = "";
             let current_message_timer = 0; 
+            let sent_message = false;
 
             websocket.onopen = function() {
                 console.log("connection opened");
@@ -39,11 +40,14 @@
                     current_emotion = res.emotion;
                 }
                 current_message_timer = Date.now();
+
+                sent_message = false;
             }
-            input.onkeydown = function(e) {
-                if (e.key == "Enter") {
-                    websocket.send(input.value);
-                    input.value = "";
+            player_input.onkeydown = function(e) {
+                if ( e.key == "Enter" && player_input.value.length > 0 ) {
+                    websocket.send(player_input.value);
+                    player_input.value = "";
+                    sent_message = true;
                 }
             }
 
@@ -77,13 +81,23 @@
                 // Character Sprite Handling
                 let char_ind = floor((Date.now() - current_message_timer) / 20);
                 if ( char_ind < current_message.length && current_message.length > 0 ) {
+                    player_input.style.visibility = "hidden";
+
                     image(character_sprites[current_emotion + "SPEAKING"], (1280 - 960) / 2, 0, 960, 960);
+                    
                 } else {
+                    if ( !sent_message ) {
+                        player_input.style.visibility = "visible";
+                    } else {
+                        player_input.style.visibility = "hidden";
+                    }
                     image(character_sprites[current_emotion], (1280 - 960) / 2, 0, 960, 960);
                 }
 
                 // Textbox Sprite Handling
-                image(textbox_sprite, (1280 / 2) - (800 / 2), 535, 800, 260);
+                if ( current_message.length > 0 ) { 
+                    image(textbox_sprite, (1280 / 2) - (800 / 2), 535, 800, 260);
+                }
 
                 fill(255);
                 noStroke();

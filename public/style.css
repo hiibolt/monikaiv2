@@ -17,11 +17,11 @@ body {
 .message_div {
   position: absolute;
   right: 50%;
-  bottom: 20%;
+  bottom: 88%;
   transform: translateX(50%) translateY(50%);
 }
 #player_input {
-	background-color: transparent; /* Set the background color to transparent */
+	background-color: rgba(255, 40, 145, 0.5); /* Set the background color to transparent */
   border: white; /* Remove the border */
 	border-style: dashed;
 	
