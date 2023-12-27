@@ -4,6 +4,16 @@ A user-assistant model prompter with powerful context and memory features that r
 MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), and retrieval/encoding features. It also mimics conscious/subconscious retriveal cues, retrieval failure, and selective forgetting.
 
 ## Methods of communication
+### Web Client
+When starting the repo, a graphical web client is hosted on port **3000**.
+
+There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can add another level of humanization.
+
+
+All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the names.
+
+*Note: A given emotion must have two files to be properly rendered: "EMOTION.png" and "EMOTIONSPEAKING.png". If you don't want a speaking version, simply duplicate and rename EMOTION.png.*
+
 ### Read-Eval-Print-Loop (REPL)
  A Read-Eval-Print Loop (REPL) communication interface for Monikai.
  The least convoluted method of communication, very straightforward.
@@ -17,16 +27,6 @@ MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), a
 - **log**: Prints the Monikai in memory to stdout.
 - **get**: Takes another line as input, and prints the memory most similar in cosine.
 
-### Web Client
-When starting the repo, a graphical web client is hosted on port **3000**.
-
-There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can add another level of humanization.
-
-
-All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the names.
-
-*Note: A given emotion must have two files to be properly rendered: "EMOTION.png" and "EMOTIONSPEAKING.png". If you don't want a speaking version, simply duplicate and rename EMOTION.png.*
-
 ## Automatic Memory Pruning
 MonikaiV2's memory pruning system draws insight from the Trace Decay Theory of Forgetting and the Ebbinghaus Forgetting Curve.
 
@@ -35,6 +35,7 @@ During testing, I found that this created the most 'human' experience and lead t
 Memories are not pruned until 7 days have passed, which is considered the average time a human remembers a conversation, after which they are subject.
 
 **The following equation was used to model 'forgetting':**
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/5e6fd232-1074-4238-8c87-35e2cc2a6f80)
 
 Where **d** is the number of days since the memory was formed and **r** is the number of times the memory has been retrived.
 
