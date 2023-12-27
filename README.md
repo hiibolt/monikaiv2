@@ -3,7 +3,7 @@ A user-assistant model prompter with powerful memory and context features that c
 
 MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), and retrieval/encoding features. It also mimics conscious/subconscious retriveal cues, retrieval failure, and selective forgetting.
 
-## Methods of communication
+## Prompting Methods
 ### Web Client
 ![image](https://github.com/hiibolt/monikaiv2/assets/91273156/acd1d435-e91b-4bf2-8ad7-51df6c5af850)
 ![image](https://github.com/hiibolt/monikaiv2/assets/91273156/3cb51a7f-3888-4561-8213-a6f2d6b94fd8)
@@ -11,7 +11,7 @@ MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), a
 
 When starting the repo, a graphical web client is hosted on port **3000**.
 
-There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can add another level of humanization.
+There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can create a more human-like interaction, and puts a face to text.
 
 
 All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the names.
@@ -25,7 +25,7 @@ All assets can be customized by replacing the files in **./public/assets**. Ensu
  The least convoluted method of communication, very straightforward. 
 It's worth noting that conversations can be had seamlessly between the online client and the REPL, as demonstrated in the above photo.
 
- Anything not a command forwards prompts the Monikai.
+ Anything not a command is forwarded as a prompt to the Monikai.
 
  #### Commands:
 - **wipe**: Clear the Monikai's memories and recent conversation, preserves the description.
@@ -35,7 +35,7 @@ It's worth noting that conversations can be had seamlessly between the online cl
 - **get**: Takes another line as input, and prints the memory most similar in cosine.
 
 ## Automatic Memory Pruning
-MonikaiV2's memory pruning system draws insight from the Trace Decay Theory of Forgetting and the Ebbinghaus Forgetting Curve.
+MonikaiV2's memory pruning system draws insight from the [Trace Decay Theory of Forgetting](https://practicalpie.com/theories-of-forgetting/) and the [Ebbinghaus Forgetting Curve](https://practicalpie.com/theories-of-forgetting/).
 
 During testing, I found that this created the most 'human' experience and lead to the least hallucination.
 
@@ -74,7 +74,7 @@ Monikai will save automatically every 5 sencods, and a conversation is considere
 
     ```export OPENAI_API_KEY="YOUR KEY HERE"``` *(method varies)*
 
-3. (Optional) Edit the description **monikai/data/monikai.json** to meet your needs for the prompt.
+3. (Optional) Customize the character description field in **monikai/data/monikai.json**.
 3. Start the Monikai!
 
     ```cargo run```
