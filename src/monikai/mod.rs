@@ -1,5 +1,6 @@
 use std::fs::{ File };
 use std::io::{ Write, Seek };
+use std::time::Duration;
 use axum::{
     extract::ws::{WebSocketUpgrade, WebSocket},
     routing::get,
@@ -8,6 +9,7 @@ use axum::{
 };
 use tower_http::services::ServeDir;
 use futures::{sink::SinkExt, stream::StreamExt};
+use tokio::time::sleep;
 
 use crate::{ Serialize, Deserialize };
 use crate::{ Mutex, Arc };
@@ -54,8 +56,8 @@ impl Monikai {
             });
         
         // Build the prompt to check if more context is needed to respond
-        let memory_check_prompt = format!("
-            In the following conversation, you are Monikai.
+        let manual_memory_check_prompt = format!("
+            In the following conversation, you are 'assistant' (or Monikai).
             Decide and return JSON on whether based on the user profile and current conversation if you have the context to answer.
             If not, create a phrase to rack your memory for. For instance, if the user wants to know about a car recommendation:
 
@@ -74,28 +76,70 @@ impl Monikai {
             Response:
             {{
             ", user_profile, messages.iter().last().unwrap().content);
+        let automatic_memory_check_prompt = format!("
+            In the following conversation, you are the 'assistant' (or Monikai).
+            Generate an incredibly short phrase to check your memory embeddings for similar things to the current conversation.
 
-        // Prompt davinci-003 to decide
-        let memory_check_unparsed = openai::instruction_request(memory_check_prompt).await.unwrap();
+            Example:
+            {{
+                \"needs_memory_check\": true,
+                \"memory_check_phrase\": \"car recommendations\"
+            }}
+
+            USER PROFILE:
+            {}
+
+            RECENT CONVERSATION:
+            {}
+
+            Response:
+            {{
+                \"needs_memory_check\": true,
+            ", user_profile, messages.iter().last().unwrap().content);
+
+        // Prompt davinci-003 to generate keyphrases
+        let manual_memory_check_unparsed = openai::instruction_request(manual_memory_check_prompt).await.unwrap();
+        let automatic_memory_check_unparsed = openai::instruction_request(automatic_memory_check_prompt).await.unwrap();
 
         // If the input parses, try to grab context.
-        if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(format!("{{{}", memory_check_unparsed).as_str()) {
+        if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(format!("{{\"needs_memory_check\": true, {}", automatic_memory_check_unparsed).as_str()) {
+            let key_phrase_embedding = openai::embedding_request(&memory_check.memory_check_phrase).await.unwrap();
+
+            self.memories
+                .sort_by(|a, b| {
+                    let a_sim = linalg::cosine_similarity(&key_phrase_embedding, &a.embedding);
+                    let b_sim = linalg::cosine_similarity(&key_phrase_embedding, &b.embedding);
+
+                    a_sim.partial_cmp(&b_sim).unwrap()
+                });
+
+            if let Some(most_similar) = self.memories.last_mut() {
+                most_similar.times_read += 1usize;
+
+                messages.insert(
+                    2, 
+                    openai::Message { 
+                        role: String::from("system"), 
+                        content: format!("You believe you may need additional information to respond. Here is a related memory from {} ago: {}", most_similar.readable_time_since(), most_similar.conversation)
+                    });
+                
+                print::debug("Grabbed automatic memory");
+            }
+        }
+        if let Ok(memory_check) = serde_json::from_str::<MemoryDiveConformation>(format!("{{{}", manual_memory_check_unparsed).as_str()) {
             if memory_check.needs_memory_check {
-                print::debug("Need to perform memory check!");
                 let key_phrase_embedding = openai::embedding_request(&memory_check.memory_check_phrase).await.unwrap();
 
-                let mut memories_sorted: Vec<memory::Memory> = self.memories
-                    .clone();
-                    
-                memories_sorted.sort_by(|a, b| {
+                self.memories
+                    .sort_by(|a, b| {
                         let a_sim = linalg::cosine_similarity(&key_phrase_embedding, &a.embedding);
                         let b_sim = linalg::cosine_similarity(&key_phrase_embedding, &b.embedding);
 
                         a_sim.partial_cmp(&b_sim).unwrap()
                     });
 
-                if let Some(most_similar) = memories_sorted.last() {
-                    print::debug(&format!("Most similar: {}", most_similar.conversation));
+                if let Some(most_similar) = self.memories.last_mut() {
+                    most_similar.times_read += 1usize;
 
                     messages.insert(
                         2, 
@@ -103,6 +147,8 @@ impl Monikai {
                             role: String::from("system"), 
                             content: format!("You believe you may need additional information to respond. Here is a related memory from {} ago: {}", most_similar.readable_time_since(), most_similar.conversation)
                         });
+                    
+                    print::debug("Grabbed manually checked memory");
                 }
             }
         }
@@ -303,5 +349,15 @@ async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<Monikai>>) {
                 .send(axum::extract::ws::Message::Text(response_with_emotion))
                 .await.unwrap();
         }
+    }
+}
+/**
+ TODO
+**/
+pub async fn monikai_memory_agent( monikai: Arc<Mutex<Monikai>> ) {
+    loop {
+        //println!("meow :3");
+
+        sleep(Duration::from_secs(1)).await;
     }
 }

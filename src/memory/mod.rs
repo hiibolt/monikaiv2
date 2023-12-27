@@ -8,7 +8,8 @@ pub struct Memory {
     pub user_profile: UserProfile,
     pub interaction_summary: InteractionSummary,
     pub conversation: Conversation,
-    pub timestamp: u64
+    pub timestamp: u64,
+    pub times_read: usize
 }
 pub type Embedding = Vec<f64>;
 pub type UserProfile = String;
@@ -36,7 +37,8 @@ impl Memory {
                     user_profile, 
                     interaction_summary,
                     conversation,
-                    timestamp
+                    timestamp,
+                    times_read: 0usize
                 }
             }
             Err(_) => todo!()

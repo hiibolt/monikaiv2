@@ -54,6 +54,7 @@ async fn build_monikai_repl() -> Result<(), ()> {
 
     Ok(())
 }
+
 #[tokio::test]
 async fn build_monikai_backend() -> Result<(), ()> {
     // Open the data file

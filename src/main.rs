@@ -43,10 +43,8 @@ async fn main() {
         ));
 
     // Start the repl and frontend
-    tokio::spawn(monikai::monikai_repl( monikai.clone() ));
+    tokio::spawn(monikai::monikai_memory_agent( monikai.clone() ));
     tokio::spawn(monikai::monikai_backend( monikai.clone() ));
 
-    // I may need to look into doing this a different way.
-    // However, I'll probably end up using the main fn for timing tasks and plugins.
-    loop {}
+    monikai::monikai_repl( monikai ).await;
 }
