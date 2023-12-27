@@ -389,7 +389,7 @@ pub async fn monikai_memory_agent( monikai: Arc<Mutex<Monikai>> ) {
                 let days_since = current_time.saturating_sub( memory.timestamp ) / 86400;
 
                 if days_since > 2 && memory.times_read < 50 {
-                    let forget_score: f64 = memory.times_read as f64 / 1.15f64.powi((days_since - 2) as i32);
+                    let forget_score: f64 = 1.15f64.powf(days_since as f64 - 6.99f64) / 1.15f64.powi(memory.times_read as i32) - 1f64;
                     if forget_score < 1f64 {
                         print::debug(&format!("Pruned memory: {}...", memory.interaction_summary.get(0..if memory.interaction_summary.len() < 35 { memory.interaction_summary.len() } else { 35 } ).unwrap()));
 
