@@ -406,7 +406,9 @@ pub async fn monikai_memory_agent( monikai: Arc<Mutex<Monikai>> ) {
     }
 }
 /*
- TODO
+ Automatically saves the Monikai every 5 seconds.
+
+ Saves the conversation as a memory after 5 minutes.
 */
 pub async fn monikai_autosave( monikai: Arc<Mutex<Monikai>> ) {
     loop {
@@ -418,7 +420,7 @@ pub async fn monikai_autosave( monikai: Arc<Mutex<Monikai>> ) {
         let minutes_since = current_time.saturating_sub( monikai.lock().await.last_spoken_to ) / 60;
 
         let conversation_length = monikai.lock().await.current_conversation.len();
-        if minutes_since > 1 && conversation_length > 0 {
+        if minutes_since > 5 && conversation_length > 0 {
             monikai.lock().await.end_conversation().await;
 
             print::debug("Ended conversation")
