@@ -1,6 +1,6 @@
 use std::fs::{ File };
 use std::io::{ Write, Seek };
-use std::time::Duration;
+use std::time::{ Duration, SystemTime, UNIX_EPOCH };
 use axum::{
     extract::ws::{WebSocketUpgrade, WebSocket},
     routing::get,
@@ -352,11 +352,43 @@ async fn monikai_websocket(stream: WebSocket, monikai: Arc<Mutex<Monikai>>) {
     }
 }
 /**
- TODO
+ Automatically removes memories based on the ratio of time to access.
+
+ Based on the Ebbinghaus Forgetting Curve (with slightly more aggressive constants)
+ and Trace Decay Theory of Forgetting.
+
+
+ During testing, I found that this created the most 'human-like' interactions, and that 
+ limits had to be set, as the 'forgetting curve' isn't all inclusive, many people don't
+ ever forget some memories, regardless of time. In Monikai's case, I quantified this as 50+
+ recalls, a completely arbitrary number.
 **/
 pub async fn monikai_memory_agent( monikai: Arc<Mutex<Monikai>> ) {
     loop {
-        //println!("meow :3");
+        let memories_clone = monikai.lock().await.memories.clone();
+        monikai.lock().await.memories = memories_clone
+            .iter()
+            .filter_map(|memory| {
+                let current_time = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+        
+                let days_since = current_time.saturating_sub( memory.timestamp ) / 86400;
+
+                if days_since > 2 && memory.times_read < 50 {
+                    let forget_score: f64 = memory.times_read as f64 / 1.15f64.powi((days_since - 2) as i32);
+                    if forget_score < 1f64 {
+                        print::debug(&format!("Pruned memory: {}...", memory.interaction_summary.get(0..if memory.interaction_summary.len() < 35 { memory.interaction_summary.len() } else { 35 } ).unwrap()));
+
+                        return None;
+                    }
+                }
+
+                Some(memory.clone())
+            })
+            .collect::<Vec<memory::Memory>>();
+        
 
         sleep(Duration::from_secs(1)).await;
     }
