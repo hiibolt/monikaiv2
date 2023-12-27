@@ -1,7 +1,7 @@
 # MonikaiV2
-A user-assistant model prompter with powerful memory and context features that create an incredibly human experience over longer periods of time.
+A user-assistant model prompter with powerful memory and context features that create an incredibly human experience over longer periods of time, based on the [MemoryBank whitepaper](https://arxiv.org/pdf/2305.10250.pdf) by Wanjun Zhong, Lianghong Guo1, Qiqi Gao, He Ye, and Yanlin Wang.
 
-MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), and retrieval/encoding features. It also mimics conscious/subconscious retriveal cues, retrieval failure, and selective forgetting.
+MonikaiV2 instances feature a Short-Term Memory (STM) and Long-Term Memory (LTM), while also mimicing conscious/subconscious retriveal cues, retrieval failure, and selective forgetting.
 
 ## Prompting Methods
 ### Web Client
@@ -81,3 +81,5 @@ Monikai will save automatically every 5 sencods, and a conversation is considere
 
 #### Credits:
 - "Nastya Sprite Pack" by u/uzikovskikh ([link](https://www.reddit.com/r/DDLC/comments/15qcmp9/content_pack_release_nastya_by_uvitkovskikh_and/))
+- "MemoryBank: Enhancing Large Language Models
+with Long-Term Memory" - ([link](https://arxiv.org/pdf/2305.10250.pdf))
