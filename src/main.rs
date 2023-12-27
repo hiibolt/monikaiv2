@@ -45,6 +45,7 @@ async fn main() {
     // Start the repl and frontend
     tokio::spawn(monikai::monikai_memory_agent( monikai.clone() ));
     tokio::spawn(monikai::monikai_backend( monikai.clone() ));
+    tokio::spawn(monikai::monikai_repl( monikai.clone() ));
 
-    monikai::monikai_repl( monikai ).await;
+    monikai::monikai_autosave( monikai ).await;
 }

@@ -28,10 +28,17 @@ struct MemoryDiveConformation {
 pub struct Monikai {
     pub description: String,
     pub memories: Vec<memory::Memory>,
-    pub current_conversation: Vec<openai::Message>
+    pub current_conversation: Vec<openai::Message>,
+    pub last_spoken_to: u64
 }
 impl Monikai {
     async fn respond( &mut self ) -> String {
+        // Set the last spoken to timestamp to now
+        self.last_spoken_to = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        
         // First, compile the conversation and user profile
         let mut messages = self.current_conversation.clone();
         let user_profile = self.memories.iter()
@@ -230,7 +237,8 @@ pub async fn monikai_repl( monikai: Arc<Mutex<Monikai>> ) {
                 *monikai.lock().await = Monikai { 
                     description, 
                     memories: Vec::new(), 
-                    current_conversation: Vec::new() 
+                    current_conversation: Vec::new(),
+                    last_spoken_to: 0u64
                 };
 
                 print::info("Wiped");
@@ -271,7 +279,11 @@ pub async fn monikai_repl( monikai: Arc<Mutex<Monikai>> ) {
                         a_sim.partial_cmp(&b_sim).unwrap()
                     });
 
-                print::debug(&format!("Most similar: {}", memories_sorted.last().unwrap().conversation));
+                if let Some(most_similar) = memories_sorted.last() {
+                    print::debug(&format!("Most similar: {}", most_similar.conversation));
+                } else {
+                    print::debug("Your Monikai has no memories! Go make some :3");
+                }
             }
             _ => {
                 monikai.lock().await.send_message(buffer.clone()).await;
@@ -390,6 +402,38 @@ pub async fn monikai_memory_agent( monikai: Arc<Mutex<Monikai>> ) {
             .collect::<Vec<memory::Memory>>();
         
 
-        sleep(Duration::from_secs(1)).await;
+        sleep(Duration::from_secs(15)).await;
+    }
+}
+/*
+ TODO
+*/
+pub async fn monikai_autosave( monikai: Arc<Mutex<Monikai>> ) {
+    loop {
+        let current_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let minutes_since = current_time.saturating_sub( monikai.lock().await.last_spoken_to ) / 60;
+
+        let conversation_length = monikai.lock().await.current_conversation.len();
+        if minutes_since > 1 && conversation_length > 0 {
+            monikai.lock().await.end_conversation().await;
+
+            print::debug("Ended conversation")
+        }
+
+        if let Ok(mut file_handle) = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("data/monikai.json")
+        {
+            monikai.lock().await.save_to_file( &mut file_handle );
+        } else {
+            print::debug("File busy!");
+        }
+
+        sleep(Duration::from_secs(5)).await;
     }
 }
