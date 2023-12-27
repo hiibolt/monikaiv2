@@ -1,10 +1,14 @@
 # MonikaiV2
-A user-assistant model prompter with powerful context and memory features that replicate a very human experience over long time periods.
+A user-assistant model prompter with powerful memory and context features that create an incredibly human experience over longer periods of time.
 
 MonikaiV2 instances feature a Short-Term Memory (STM), Long-Term Memory (LTM), and retrieval/encoding features. It also mimics conscious/subconscious retriveal cues, retrieval failure, and selective forgetting.
 
 ## Methods of communication
 ### Web Client
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/acd1d435-e91b-4bf2-8ad7-51df6c5af850)
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/3cb51a7f-3888-4561-8213-a6f2d6b94fd8)
+
+
 When starting the repo, a graphical web client is hosted on port **3000**.
 
 There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can add another level of humanization.
@@ -15,8 +19,11 @@ All assets can be customized by replacing the files in **./public/assets**. Ensu
 *Note: A given emotion must have two files to be properly rendered: "EMOTION.png" and "EMOTIONSPEAKING.png". If you don't want a speaking version, simply duplicate and rename EMOTION.png.*
 
 ### Read-Eval-Print-Loop (REPL)
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/72a8dfd9-d606-473b-ae1a-bd2b4aec47d2)
+
  A Read-Eval-Print Loop (REPL) communication interface for Monikai.
- The least convoluted method of communication, very straightforward.
+ The least convoluted method of communication, very straightforward. 
+It's worth noting that conversations can be had seamlessly between the online client and the REPL, as demonstrated in the above photo.
 
  Anything not a command forwards prompts the Monikai.
 
