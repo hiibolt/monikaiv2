@@ -1,5 +1,5 @@
 # MonikaiV2
-A user-assistant model prompter with powerful memory and context features that create an incredibly human experience over longer periods of time, based on the [MemoryBank whitepaper](https://arxiv.org/pdf/2305.10250.pdf) by Wanjun Zhong, Lianghong Guo1, Qiqi Gao, He Ye, and Yanlin Wang.
+A user-assistant model prompter with powerful memory and context features that create an incredibly human experience over longer periods of time. Based on the [MemoryBank whitepaper](https://arxiv.org/pdf/2305.10250.pdf) by Wanjun Zhong, Lianghong Guo1, Qiqi Gao, He Ye, and Yanlin Wang.
 
 MonikaiV2 instances feature a Short-Term Memory (STM) and Long-Term Memory (LTM), while also mimicing conscious/subconscious retrieval cues, retrieval failure, and selective forgetting.
 
@@ -11,7 +11,7 @@ MonikaiV2 instances feature a Short-Term Memory (STM) and Long-Term Memory (LTM)
 
 When starting the repo, a graphical web client is hosted on port **3000**.
 
-There is an additional interface layer, allowing the Monikai to express a preset range of emotions! This can create a more human-like interaction, and puts a face to text.
+This contains an additional interface layer, allowing the Monikai to express a preset range of emotions! This can create a more human-like interaction, and puts a face to text.
 
 
 All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the original file names.
@@ -30,7 +30,7 @@ It's worth noting that conversations can be had seamlessly between the online cl
  #### Commands:
 - **wipe**: Clears the Monikai's memories and recent conversation, preserves the description.
 - **save**: Writes the Monikai in memory to 'monikai.json'.
-- **end**: Manually marks the current conversation as completed and encodes it as a memory.
+- **end**: Manually marks the current conversation as completed and encodes it to memory.
 - **log**: Prints the Monikai in memory to stdout.
 - **get**: Takes another line as input, and prints the memory most similar in cosine.
 
@@ -44,7 +44,7 @@ Memories are not pruned until 7 days have passed, which is considered the averag
 **The following equation was used to model 'forgetting':**
 ![image](https://github.com/hiibolt/monikaiv2/assets/91273156/5e6fd232-1074-4238-8c87-35e2cc2a6f80)
 
-Where **d** is the number of days since the memory was formed and **r** is the number of times the memory has been retrived.
+Where **d** is the number of days since the memory was formed and **r** is the number of times the memory has been retrived. Memories with a score over 1 are forgotten.
 
 The model retrieves a memory either  subconsciously with a 'retrieval cue', or consciously if the Monikai determines that it needs more context.
 
