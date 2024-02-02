@@ -4,26 +4,12 @@ A user-assistant model prompter with powerful memory and context features that c
 MonikaiV2 instances feature a Short-Term Memory (STM) and Long-Term Memory (LTM), while also mimicing conscious/subconscious retrieval cues, retrieval failure, and selective forgetting.
 
 ## Prompting Methods
-### Web Client
-![image](https://github.com/hiibolt/monikaiv2/assets/91273156/acd1d435-e91b-4bf2-8ad7-51df6c5af850)
-![image](https://github.com/hiibolt/monikaiv2/assets/91273156/3cb51a7f-3888-4561-8213-a6f2d6b94fd8)
-
-
-When starting the repo, a graphical web client is hosted on port **3000**.
-
-This contains an additional interface layer, allowing the Monikai to express a preset range of emotions! This can create a more human-like interaction, and puts a face to text.
-
-
-All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the original file names.
-
-*Note: A given emotion must have two files to be properly rendered: "EMOTION.png" and "EMOTIONSPEAKING.png". If you don't want a speaking version, simply duplicate and rename EMOTION.png.*
-
 ### Read-Eval-Print-Loop (REPL)
 ![image](https://github.com/hiibolt/monikaiv2/assets/91273156/72a8dfd9-d606-473b-ae1a-bd2b4aec47d2)
 
  A Read-Eval-Print Loop (REPL) communication interface for Monikai.
  The least convoluted method of communication, very straightforward. 
-It's worth noting that conversations can be had seamlessly between the online client and the REPL, as demonstrated in the above photo.
+It's worth noting that conversations can be had seamlessly between the online client and the REPL, as demonstrated in the below photo.
 
  Anything which is not a command is forwarded as a prompt to the Monikai.
 
@@ -33,6 +19,20 @@ It's worth noting that conversations can be had seamlessly between the online cl
 - **end**: Manually marks the current conversation as completed and encodes it to memory.
 - **log**: Prints the Monikai in memory to stdout.
 - **get**: Takes another line as input, and prints the memory most similar in cosine.
+
+### Web Client
+
+When starting the repo, a graphical web client is hosted on port **3000**.
+
+This contains an additional interface layer, allowing the Monikai to express a preset range of emotions! This can create a more human-like interaction, and puts a face to text.
+
+All assets can be customized by replacing the files in **./public/assets**. Ensure that you modify either the import code in **./public/index.html** or mimic the original file names.
+
+*Note: A given emotion must have two files to be properly rendered: "EMOTION.png" and "EMOTIONSPEAKING.png". If you don't want a speaking version, simply duplicate and rename EMOTION.png.*
+
+
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/acd1d435-e91b-4bf2-8ad7-51df6c5af850)
+![image](https://github.com/hiibolt/monikaiv2/assets/91273156/3cb51a7f-3888-4561-8213-a6f2d6b94fd8)
 
 ## Automatic Memory Pruning
 MonikaiV2's memory pruning system draws insight from the [Trace Decay Theory of Forgetting](https://practicalpie.com/theories-of-forgetting/) and the [Ebbinghaus Forgetting Curve](https://practicalpie.com/theories-of-forgetting/).
