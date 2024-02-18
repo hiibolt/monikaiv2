@@ -58,7 +58,7 @@ The user prompts the Monikai "Hey, what was the baking cookbook you recommended 
     2. Conscious memory search with key phrase "cookbook recommendation"
     3. A memory where the Monikai recommended *The College Cookbook*.
 ## Autosave / Auto-Encoding
-Monikai will save automatically every 5 senconds, and a conversation is considered 'over' after 5 minutes of inactivity. When a conversation is 'over', it will automatically self-encode into LTM.
+Monikai will save automatically every 5 seconds, and a conversation is considered 'over' after 5 minutes of inactivity. When a conversation is 'over', it will automatically self-encode into LTM.
 
 # Usage
 ## Prerequisites:
